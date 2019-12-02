@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>
+	</title>
+	<script> DNKfish = 0; DNKsharks = 0; </script>
+	<script type="text/javascript" src="iterate.js"></script>
+	<script type="text/javascript" src="funk.js"></script>
+	<script type="text/javascript" src="initialvalues.js"></script>
+	<script type="text/javascript" src="Fish.js"></script>
+	<script type="text/javascript" src="Shark.js"></script>
+	<script type="text/javascript" src="neuralnetdraw.js"></script>
+	<script type="text/javascript" src="history.js"></script>
+	<style>
+
+		* {
+			background-color: black;
+		}
+
+		.add {
+			margin:10px;
+			padding: 10px;
+			color:white;
+			background-color: rgba(255,255,255,0.2);
+			border: none;
+			outline:none;
+			border-radius: 10px;
+		}
+
+		html {
+		    overflow: scroll;
+		    overflow-x: hidden;
+		}
+
+		::-webkit-scrollbar {
+		    width: 0px;
+		    background: transparent; 
+		}
+
+		::-webkit-scrollbar-thumb {
+		    background: #00003B;
+		}
+
+		#welcomeScreen {
+			background-color: rgba(0,0,0,0.8);
+			padding: 20px;
+			position: fixed;
+			top: 0px;
+			left: 0px;
+			height: 100%;
+			transition: opacity 2s;
+			text-align: center;
+		}
+
+		#welcomeScreen button {
+			outline: none;
+			border: none;
+			width:400px;
+			height:70px;
+			border-radius: 20px;
+			display: block;
+			margin: auto;
+			margin-top: 50px;
+			background-color: #070732;
+			color: white;
+			text-align: center;
+			font-size: 17px;
+			transition: width 0.5s, opacity 2s , color 1s, height 0.5s, background-color 0.5s;
+			cursor: grab;
+		}
+
+		#welcomeScreen button:hover {
+			width:420px;
+			height:80px;
+			background-color: #1F1F46;
+		}
+
+		#input {
+			display: none;
+		}
+
+		#welcomeMessage {
+			width:400px;
+			height:50px;
+			margin:auto;
+			color: white;
+			font-size:30px;
+			margin-top: 40%;
+			transition: opacity 1s;
+		}
+
+	</style>
+	<script>
+
+	function start() {		
+		spawn();
+		interval = setInterval(iterate, 20)
+	}
+
+	function spawn() {
+		var numberOfFish = 100;
+		var numberOfSharks = 7;
+		var numberOfFoods = 150*scalingFactor*scalingFactor;
+		var numberOfPrepreki = 0;
+		for (var i = 0; i < numberOfFish; i++) {
+			fish.push(new Fish());
+		}
+		for (var i = 0; i < numberOfSharks; i++) {
+			sharks.push(new Shark());
+		}
+		for (var i=0; i<numberOfFoods; i++) {
+			food.push(new Food());
+		}
+		for (var i=0; i<numberOfPrepreki; i++) {
+			prepreki.push(new Prepreka());
+		}
+	}
+
+	function Food() {
+		this.x = Math.floor(Math.random()*windowWidth/100)*100;
+		this.y = Math.floor(Math.random()*windowHeight/50)*50;
+	}
+
+	function Prepreka(position) {
+		this.x = Math.random()*windowWidth/2 + windowWidth/4;
+		this.y = Math.random()*windowHeight/2 + windowHeight/4;
+		if(position) {
+			this.x = position.x;
+			this.y = position.y;
+		}
+	}
+
+	
+
+function updateStats() {
+
+		var color;
+
+		var Health = 0, Age = 0, red = 0, green = 0, blue = 0;
+		for(var i=0; i<fish.length; i++) {
+
+			Health += fish[i].health;
+			Age += fish[i].age;
+
+			color = hexToRgb(fish[i].dna.color);
+			red += color.r;
+			green += color.g;
+			blue += color.b;
+		}
+
+		document.getElementById("statsFishHealth").innerHTML = (Health/fish.length).toFixed(2);
+
+		red /= fish.length;
+		green /= fish.length;
+		blue /= fish.length;
+
+		document.getElementById("statsFishColor").style.backgroundColor = "rgb("+red+", "+green+", "+blue+")";
+
+		Health = 0; Age = 0; red = 0; green = 0; blue = 0; 
+
+		for(var i=0; i<sharks.length; i++) {
+
+			Health += sharks[i].health;
+			Age += sharks[i].age;
+			
+			color = hexToRgb(sharks[i].dna.color);
+			red += color.r;
+			green += color.g;
+			blue += color.b;
+		}
+
+		document.getElementById("statsSharksHealth").innerHTML = (Health/sharks.length).toFixed(2);
+
+		red /= sharks.length;
+		green /= sharks.length;
+		blue /= sharks.length;
+
+		document.getElementById("statsSharkColor").style.backgroundColor = "rgb("+red+", "+green+", "+blue+")";
+}
+
+	</script>
+</head>
+<body>
+
+<div id="parent">
+	<canvas id="ocean" style="background-color: #00003B;">
+	</canvas>
+	<div id="info" style="color: white;">
+		<div id="levi" style="margin-left: 10px;float:left">
+		<p id="generation" style="font-size: 24px;">Generation #0</p>
+		
+		<div style="float:left;">
+				Number of Plankton <p id="numberOfPlankton">0</p>	
+				Number of Fish <p id="numberOfFish">0</p>
+				Number of Sharks <p id="numberOfSharks">0</p>
+		</div>
+
+		<div  style="float:left; margin-left: 15px;">
+			<button onclick="speedUp()" class="add" >Speed Up</button><br/>
+			<button id="build" onclick="build()" class="add" style="color: red" >Build Mode</button>
+			<button id="control" onclick="controlShark()" class="add" style="color: red" >Mouse Mode</button>
+		</div>
+		</div>
+		<div id="desni" style="margin-right: 10px; text-align: right; float:right;">
+
+			<p style="font-size: 24px;  ">Statistics</p>
+		
+		<div style="float:right;" >
+			<p style="font-size: 20px">Sharks</p>
+			Health <p id="statsSharksHealth">0</p>
+			<div id="statsSharkColor" style="width:auto; height:30px; margin-bottom:20px "></div>
+
+		</div>
+		<div style="float:right; margin-right:100px; text-align: left;" >
+			<p style="font-size: 20px">Fish</p>
+			Health <p id="statsFishHealth">0</p>
+			<div id="statsFishColor" style="width:auto; height:30px; margin-bottom:20px"></div>
+		</div>
+		</div>
+		<div id="center" style="display: none; width: 600px; height:400px; float:right; margin-right: 150px; ">
+			<p id="infoType" style="font-size: 24px; margin-bottom: 5px;" >Fish Info</p>
+			<div>
+			<div style="float: left; margin-top:10px; margin-right: 20px; padding:10px; padding-left: 0px; text-align: center;">
+			Health <p id="infoHealth" >1</p>
+			</div>
+			<div style="float: left; margin:10px; margin-right: 20px; padding:10px; text-align: center;">
+			ID <p id="infoID" >1</p>
+			</div>
+			<div style="float: left; margin:10px; margin-right: 20px; padding:10px; width:50px; height:auto; text-align: center;">
+			Color <div id="infoColor" style="height: 40px; margin-top:15px; height:20px;" > </div>
+			</div>
+			<div style="float: left; margin:10px; margin-right: 20px; padding:10px; text-align: center;">
+			M. Connections <p id="infoMutationsConn" >0</p>
+			</div>
+			</div>
+			<canvas id="display" width=500 height=400 style="border: 0.5px solid white;" ></canvas>
+		</div>
+	</div>
+</div>
+<div id="historyContainer" style="width: 100%; overflow-x: scroll; position: relative;transition: height 1s;">
+<canvas id="history" style="">
+</canvas>
+</div>
+<div id="welcomeScreen">
+	<div title="AQUAtic Simulation" id="welcomeMessage">Welcome to AQUAS</div>
+	<button id="loadDNA" onclick ='document.getElementById("input").click();'>Load DNA progress</button>
+	<button id="skipDNA" onclick ="skipDNA()">Skip</button>
+	<input id="input" type="file" onchange="loadDNA(this.files)" />
+</div>
+<script>
+
+	document.getElementById("ocean").width = windowWidth;
+	document.getElementById("ocean").height = windowHeight;
+	document.getElementById("history").width = windowWidth;
+	document.getElementById("history").height = 100;
+	document.getElementById("ocean").style.webkitFilter = "blur(7px) brightness(80%) saturate(50%)";
+
+	document.getElementById("display").width = 500;
+	document.getElementById("display").height = 400;
+
+	document.getElementById("welcomeScreen").style.left = windowWidth/3 + "px";
+
+	document.getElementById("welcomeScreen").style.width = windowWidth/3 + "px";
+
+	document.getElementById("ocean").addEventListener("transitionend", () => {
+		document.getElementById("ocean").style.cursor = "default"
+	});
+
+	function controlShark() {
+		var obj = new Shark();
+		obj.x = windowWidth/2;
+		obj.y = windowHeight/2;
+		obj.health = 1000;
+		obj.dna = {
+			color: "#ffffff",
+		};
+		obj.move = function () {
+
+			this.health -= 0.2
+			var ctx = document.getElementById("ocean").getContext("2d")
+			  	ctx.save();
+			    ctx.translate(this.x + (sharkHeight)/2, this.y+(sharkWidth)/2);
+			    var angle = Math.atan(this.velocity.y/this.velocity.x)
+			    ctx.rotate(angle);
+			    ctx.fillStyle = this.dna.color;
+			    ctx.fillRect(-(sharkHeight)/2, -(sharkWidth)/2, sharkHeight, sharkWidth);
+			    ctx.restore();
+
+			    ctx.globalCompositeOperation = "destination-in";
+
+			    ctx.beginPath();
+				ctx.arc(this.x+10, this.y+5, 180, 0, 2 * Math.PI);
+				ctx.fillStyle = "black";
+				ctx.fill()
+			    ctx.globalCompositeOperation = "source-over";
+
+
+
+				let currentVelocity = normalize(this.velocity) 
+
+				this.velocity.x += this.acceleration.x;
+				this.velocity.y += this.acceleration.y;
+
+				this.velocity = normalize(this.velocity)
+
+			    this.x += maxSpeedSharks*this.velocity.x
+			    this.y += maxSpeedSharks*this.velocity.y
+
+			    if(this.health > 500)
+				this.health = 500
+
+			if(this.x > windowWidth)
+				this.x = 0;
+			if(this.x < 0)
+				this.x = windowWidth;
+			if(this.y > windowHeight)
+				this.y = 0;
+			if(this.y < 0)
+				this.y = windowHeight;
+
+			if(this.health < 0) {
+				for (var i = 0; i < sharks.length; i++) {
+					if(sharks[i].id == this.id) {
+						deadSharks.unshift(sharks[i].dna)
+						sharks.splice(i,1);
+					}
+				}
+				return;
+			}
+
+
+
+			var toEat = checkEat(this, fish, sharkWidth)
+
+			if(toEat != -1) {
+				fish.splice(toEat, 1);
+				this.health += 50;
+			}
+		}.bind(obj)
+		sharks.unshift(obj)
+	}
+
+	document.getElementById("ocean").addEventListener("mousemove", (e) => {
+		let mouseX = event.clientX;
+		let mouseY = event.clientY + window.pageYOffset;
+		let mouseShark = sharks[0]
+		let acceleration = normalize({
+			x: mouseX - mouseShark.x,
+			y: mouseY - mouseShark.y
+		})
+		mouseShark.acceleration.x = 0.1*acceleration.x
+		mouseShark.acceleration.y = 0.1*acceleration.y
+	})
+
+	function loadDNA(files) {
+		var reader = new FileReader();
+		var file = files[0]
+		var DNA;
+		if(file) {
+			 reader.onload = (function(fajlot) {
+		        return function(e) {
+		        	DNA = e.target.result
+
+		        	if(DNA.charAt(0) == "D") {
+		        		DNA = "{" + DNA + "}";
+		        		DNA = DNA.replace(/=/g, ":")
+		        		DNA = DNA.replace(/;/g, ",")
+		        		DNA = DNA.replace(/DNKfish/, '"DNKfish"')
+		        		DNA = DNA.replace(/DNKsharks/, '"DNKsharks"')
+		        		DNA = DNA.replace(/brnagen : /, '"brnagen" : "')
+		        		DNA = DNA.slice(0, DNA.length-2)
+		        		DNA += '"}'
+		        	}
+
+			        DNA = JSON.parse(DNA);
+			        console.log(DNA)
+			        fish = [];
+			        sharks = [];
+			       for(var i=0; i<DNA.DNKfish.length/2; i++) {
+			        	fish.push(new Fish(DNA.DNKfish[i]))
+			        }
+			        for(var i=0; i<DNA.DNKsharks.length/2; i++) {
+			        	sharks.push(new Shark(DNA.DNKsharks[i]))
+			        }
+
+			        drawHistory(DNA);
+
+			        setTimeout(() => {document.getElementById("loadDNA").style.backgroundColor = "#385A38"}, 1000)
+
+			        setTimeout(skipDNA, 2500);
+			        document.getElementById("generation").innerHTML = "Generation #"+DNA.brnagen
+		        };
+		      })(file);
+		}
+        reader.readAsText(file);
+	}
+
+	function skipDNA() {
+		document.getElementById("loadDNA").addEventListener("transitionend", () => {
+			document.getElementById("ocean").style.webkitFilter = "";
+			document.getElementById("welcomeScreen").style.display = "none"
+			document.getElementById("ocean").style.cursor = "none"
+		});
+		
+		document.getElementById("welcomeScreen").style.opacity = 0;
+
+
+		for(var i=0; i<17; i++) {
+			setTimeout( () => {
+				let text = document.getElementById("loadDNA").innerHTML;
+				document.getElementById("loadDNA").innerHTML = text.substring(0, text.length-1)
+			}, i*50)
+		}
+		for(var i=0; i<4; i++) {
+			setTimeout( () => {
+				let text = document.getElementById("skipDNA").innerHTML;
+				document.getElementById("skipDNA").innerHTML = text.substring(0, text.length-1)
+			}, i*50)
+		}
+
+		document.getElementById("ocean").style.transition = "1s linear"
+		document.getElementById("loadDNA").style.transition = "width 2s, opacity 1.5s , color 1s, height 2s, background-color 0.5s"
+		document.getElementById("skipDNA").style.transition = "width 2s, opacity 1.5s , color 1s, height 2s, background-color 0.5s"
+		document.getElementById("loadDNA").style.color = "#070732"
+		document.getElementById("skipDNA").style.color = "#070732"
+		document.getElementById("welcomeMessage").style.opacity = 0
+		document.getElementById("loadDNA").style.width = "0px"
+		document.getElementById("skipDNA").style.width = "0px"
+		document.getElementById("loadDNA").style.opacity = 0;
+		document.getElementById("skipDNA").style.opacity = 0;
+	}
+
+
+	var isMouseDown = false;
+
+	function drawPrechki(event) {
+		if(!isMouseDown)
+			return; 
+		if(!buildingMode)
+			return;
+		prepreki.push(new Prepreka({
+			x: event.clientX,
+			y: event.clientY + window.pageYOffset
+		}))
+	}
+
+	document.getElementById("generation").onclick = () => {
+		if(interval) {
+			clearInterval(interval)
+			interval = 0
+		}
+		else {
+			interval = setInterval(iterate, 20)
+		}
+	}
+
+	document.getElementById("ocean").onmousedown = (event) => {
+		isMouseDown = true; 
+		drawPrechki(event);
+		drawNN(event);
+	}
+
+	document.getElementById("ocean").onmouseup = () => {isMouseDown = false}
+	document.getElementById("ocean").onmousemove = drawPrechki;
+
+	start()
+</script>
+</body>
+</html>
